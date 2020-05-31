@@ -12,6 +12,7 @@ keep_md: yes
 suppressMessages(library(ggplot2))
 suppressMessages(library(dplyr))
 suppressMessages(library(lubridate))
+suppressMessages(library(knitr))
         
 activity <- read.csv("repdata_data_activity/activity.csv")
 str(activity); summary(activity); colSums(is.na(activity))
