@@ -1,0 +1,110 @@
+        ---
+        output: 
+          html_document: 
+            keep_md: yes
+        ---
+        # **Reproducible Research Project 1**
+        
+        
+        ### 1-Code for reading in the dataset and/or processing the data
+        
+        ```{r}
+        suppressMessages(library(ggplot2))
+        suppressMessages(library(dplyr))
+        suppressMessages(library(lubridate))
+        
+        activity <- read.csv("repdata_data_activity/activity.csv")
+        str(activity); summary(activity); colSums(is.na(activity))
+        ```
+        
+        ### 2-Histogram of the total number of steps taken each day
+        
+        ```{r}
+        steps_per_day <- activity %>%
+                group_by(date) %>%
+                summarize(total_steps = sum(steps ,na.rm = T))
+        ```
+        
+        ```{r}
+        ggplot(steps_per_day ,aes(total_steps))+
+                geom_histogram(bins = 30 ,fill="purple" ,alpha=0.4)+
+                ggtitle("Total steps per day")+ xlab("Toal steps")+
+                theme_minimal()
+        ```
+        
+        
+        ## 3-Mean and median number of steps taken each day
+        
+        ```{r}
+        mean_day_steps <-mean(steps_per_day$total_steps ,na.rm = TRUE)
+        median_day_steps <- median(steps_per_day$total_steps ,na.rm = TRUE)
+        
+        mean_day_steps ; median_day_steps
+        ```
+        
+        ## 4-Time series plot of the average number of steps taken
+        
+        ```{r}
+        average_steps <- activity %>%
+                group_by(interval)%>%
+                summarise(mean_stps =mean(steps ,na.rm = TRUE))
+        
+        ggplot(average_steps)+
+                geom_line(aes(x=interval ,y=mean_stps) ,color="purple")+
+                ggtitle("Time Series Plot of Average Steps")+
+                ylab("Average Steps") + xlab("Intervals")+theme_minimal() 
+        ```
+        
+        ## 5-The 5-minute interval that, on average, contains the maximum number of steps
+        
+        ```{r}
+        average_steps[which.max(average_steps$mean_stps),]
+        ```
+        
+        ## 6- Code to describe and show a strategy for imputing missing data
+        
+        ```{r}
+        mean_new_steps <- mean(activity$steps ,na.rm = TRUE)
+        steps_without_missing <- ifelse(is.na(activity$steps), mean_new_steps ,activity$steps)
+        sum(is.na(steps_without_missing))
+        new.data <- cbind(activity[,c("date" ,"interval")],steps_without_missing)
+        head(new.data)
+        ```
+        
+        
+        ## 7-Histogram of the total number of steps taken each day after missing values are imputed
+        
+        ```{r}
+        complete_steps_per_day <- new.data %>%
+                group_by(date) %>%
+                summarise(stps = sum(steps_without_missing ))
+        
+        ggplot(complete_steps_per_day)+
+                geom_histogram(aes(x=stps),binwidth = 1000 ,fill="purple" ,alpha=0.5)+
+                ggtitle("Total number of steps per day after missing values are imputed")+
+                xlab("Steps")+theme_minimal()
+        ```
+        
+        ## 8-Panel plot comparing the average number of steps taken per 5-minute interval across weekdays and weekends
+        
+        ```{r}
+        is_weekday <-function(date){
+                ifelse(wday(date)%in%c(1,7),"weekend","weekday")
+                
+        }
+        new.data <- mutate(new.data,date=ymd(date)) %>% mutate(day=sapply(date,is_weekday))
+        head(new.data)
+        ```
+        
+        ```{r}
+        averages <- new.data %>%
+                group_by(interval ,day) %>%
+                summarise(avr_steps = mean(steps_without_missing))
+        
+        ggplot(averages ,aes(interval , avr_steps))+
+                geom_line(color="purple")+
+                facet_wrap(day~.)+
+                xlab("Intervals")+ ylab("Steps")+
+                ggtitle("Panel plot comparing the average number of steps taken per 5-minute interval across weekdays and weekends")+
+                theme_minimal()
+        ```
